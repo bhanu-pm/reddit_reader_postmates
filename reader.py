@@ -19,11 +19,11 @@ class Reader:
 		self.reddit = Reddit(client_id=Reader.client_id, client_secret=Reader.client_secret, user_agent=Reader.user_agent)
 		self.subreddit_name = subreddit_name
 		try:
-			with open('codes.json', 'r') as file:
-				self.comment_dict = json.load(file)
+			with open('comments.json', 'r') as file:
+				self.comments_list_json = json.load(file)
 
 		except Exception as e:
-			self.comment_dict = {}
+			self.comments_list_json = []
 			print(f"Error occured: {e}")
 
 	def fetch_comment_tree(self):
@@ -34,11 +34,21 @@ class Reader:
 		submission_obj.comments.replace_more(limit=None)
 		
 		for comment in submission_obj.comments:
-			print(comment)
+			print(f"Default: {comment}")
+			print(f"ID: {comment.id}")
+			print(f"Body: {comment.body}")
+			print(" ################################################### ")
 
 	def get_latest_unseen_comment(self):
 		pass
 
+	def add_comment_to_dict(self, comment, location: str, code: str):
+		self.latest_comment_dict = {}
+		self.latest_comment_dict["id"] = comment.id
+		self.latest_comment_dict["body"] = comment.body
+		self.latest_comment_dict["location"] = location
+		self.latest_comment_dict["code"] = code
+		self.comments_list_json.insert(0, self.latest_comment_dict)
 
 if __name__ == "__main__":
 	read_subreddit = Reader("postmates")
