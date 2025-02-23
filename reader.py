@@ -1,11 +1,11 @@
 import os
 from dotenv import load_dotenv
-import time
-from datetime import datetime
 import json
-
 from praw import Reddit
-from praw.models import MoreComments, Submission, Subreddit
+
+# import time
+# from datetime import datetime
+# from praw.models import MoreComments, Submission, Subreddit
 
 
 class Reader:
@@ -19,24 +19,27 @@ class Reader:
 		self.reddit = Reddit(client_id=Reader.client_id, client_secret=Reader.client_secret, user_agent=Reader.user_agent)
 		self.subreddit_name = subreddit_name
 		try:
-			with open('final_comments.json', 'r') as file:
-				self.comments_list_json = json.load(file)
+			with open('all_comments.json', 'r') as file:
+				self.all_comments_list_json = json.load(file)
 
 		except Exception as e:
-			self.comments_list_json = []
-			print(f"Error occured: {e}")
+			if e == "[Errno 2] No such file or directory: 'all_comments.json'":
+				self.all_comments_list_json = []
+
 
 	def fetch_unseen_comments(self):
 		# Stickied submission (Pinned post) obj
 		subreddit_obj = self.reddit.subreddit(self.subreddit_name)
 		submission_obj = subreddit_obj.sticky()
+		print(submission_obj)
+
 		submission_obj.comment_sort = "new"
 		submission_obj.comments.replace_more(limit=None)
 		
 		unseen_comments_list = []
 		unseen_comments_dict = {}
 		for comment in submission_obj.comments:
-			if comment.id == self.comments_list_json[0]["id"]:
+			if comment.id == self.all_comments_list_json[0]["id"]:
 				break
 			unseen_comments_dict["id"] = comment.id
 			unseen_comments_dict["body"] = comment.body
@@ -50,13 +53,13 @@ class Reader:
 		self.latest_comment_dict["body"] = comment.body
 		self.latest_comment_dict["location"] = location
 		self.latest_comment_dict["code"] = code
-		self.comments_list_json.insert(0, self.latest_comment_dict)
+		self.all_comments_list_json.insert(0, self.latest_comment_dict)
 
-	def dump_to_json(self, file_name:str = "final_comments.json"):
+	def dump_to_json(self, file_name:str = "all_comments.json"):
 		with open(file_name, "w") as file:
-			json.dump(self.comments_list_json, file, indent=4)
+			json.dump(self.all_comments_list_json, file, indent=4)
 
 
 if __name__ == "__main__":
 	read_subreddit = Reader("postmates")
-	read_subreddit.fetch_comment_tree()
+	read_subreddit.fetch_unseen_comments()
