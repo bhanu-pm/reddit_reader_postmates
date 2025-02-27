@@ -22,9 +22,8 @@ class Reader:
 			with open('all_comments.json', 'r') as file:
 				self.all_comments_list_json = json.load(file)
 
-		except Exception as e:
-			if e == "[Errno 2] No such file or directory: 'all_comments.json'":
-				self.all_comments_list_json = []
+		except FileNotFoundError:
+			self.all_comments_list_json = []
 
 
 	def fetch_unseen_comments(self):
@@ -37,9 +36,9 @@ class Reader:
 		submission_obj.comments.replace_more(limit=None)
 		
 		unseen_comments_list = []
-		unseen_comments_dict = {}
 		for comment in submission_obj.comments:
-			if comment.id == self.all_comments_list_json[0]["id"]:
+			unseen_comments_dict = {}
+			if self.all_comments_list_json and comment.id == self.all_comments_list_json[0]["id"]:
 				break
 			unseen_comments_dict["id"] = comment.id
 			unseen_comments_dict["body"] = comment.body
@@ -62,4 +61,7 @@ class Reader:
 
 if __name__ == "__main__":
 	read_subreddit = Reader("postmates")
-	read_subreddit.fetch_unseen_comments()
+	unseen = read_subreddit.fetch_unseen_comments()
+
+	for i in unseen:
+		print(i)
