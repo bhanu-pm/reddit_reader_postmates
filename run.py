@@ -9,10 +9,10 @@ import re
 
 load_dotenv()
 GEMINI_KEY = os.getenv("GEMINI_API_KEY")
-if Query.GEMINI_KEY is None:
+if GEMINI_KEY is None:
 	raise EnvironmentError("GEMINI_API_KEY not found")
 
-genai.configure(api_key=GEMINI_KEY)
+client = genai.Client(api_key=GEMINI_KEY)
 
 def query(chat: list, model: str = "gemini-2.0-flash"):
 	# assert type(chat[0]["parts"]) == list, "Verify the chat format conforms to the model's requirements."
@@ -25,7 +25,9 @@ def query(chat: list, model: str = "gemini-2.0-flash"):
 
 	prompt = """I will give you a list of chat messages that were written by people. These messages are generally
     	written to share a postmates coupon code along with how much it is worth and in what locations it would work.
-    	There might also be some cases where people only post the codes and no other details about it.
+    	There might also be some cases where people only post the codes and no other details about it. Sometimes there
+    	might be messages like this [deleted], it just means that the message has been deleted, you can ignore them
+    	while parsing.
 
     	I will be giving you a list of such messages, your job is to understand what is written in the message,
     	parse it and rewrite it in the following form/structure.
@@ -59,15 +61,15 @@ $20 off. Charlotte only. Don't add it if you don't live in that area. It will ap
         Just return the parsed message list and nothing else.\n	"""
 	messages_txt = ""
 	for i, j in enumerate(chat):
-		messages_txt += f"{i+1}. {j}\n"
+		messages_txt += f"{i+1}. {j['body']}\n"
 
 	final_prompt = prompt + messages_txt
-	client = genai.Client(api_key=GEMINI_KEY)
 
 	response = client.models.generate_content(
     	model=model,
     	contents=final_prompt,
 	)
+	print(messages_txt)
 	print(response.text)
 	return response.text
 
@@ -78,6 +80,9 @@ def get_comments():
 		comment_list.append(i)
 
 	return comment_list
+
+def parse_output(out:str):
+	pass
 
 read = Reader("postmates")
 comment_list = get_comments()

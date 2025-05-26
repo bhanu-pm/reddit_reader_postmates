@@ -64,5 +64,5 @@ if __name__ == "__main__":
 	unseen = read_subreddit.fetch_unseen_comments()
 
 	for i in unseen:
-		print(i)
+		print(i['body'])
 	# print(unseen)
