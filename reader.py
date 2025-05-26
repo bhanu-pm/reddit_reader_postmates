@@ -34,7 +34,7 @@ class Reader:
 
 		submission_obj.comment_sort = "new"
 		submission_obj.comments.replace_more(limit=None)
-		
+
 		unseen_comments_list = []
 		for comment in submission_obj.comments:
 			unseen_comments_dict = {}
@@ -65,3 +65,4 @@ if __name__ == "__main__":
 
 	for i in unseen:
 		print(i)
+	# print(unseen)
