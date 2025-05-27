@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import os
 import time
 from reader import Reader
+import json
 import re
 
 
@@ -15,50 +16,22 @@ if GEMINI_KEY is None:
 client = genai.Client(api_key=GEMINI_KEY)
 
 def query(chat: list, model: str = "gemini-2.0-flash"):
-	# assert type(chat[0]["parts"]) == list, "Verify the chat format conforms to the model's requirements."
-	# g_model = genai.GenerativeModel(model)
-	# try:
-	# 	output = g_model.generate_content(chat)
-	# 	return output
-	# except Exception as e:
-	# 	print(f"Error: {e}")
+	prompt = """I will give you a list of chat messages that were written by people. 
+	These messages are generally written to share coupon codes along with how much it is worth 
+	and in what locations it would work.
 
-	prompt = """I will give you a list of chat messages that were written by people. These messages are generally
-    	written to share a postmates coupon code along with how much it is worth and in what locations it would work.
-    	There might also be some cases where people only post the codes and no other details about it. Sometimes there
-    	might be messages like this [deleted], it just means that the message has been deleted, you can ignore them
-    	while parsing.
+	There might also be some cases where people only post the codes and no other details about it. 
+	Sometimes there might be messages like this [deleted], it just means that the message 
+	has been deleted, you can ignore them while parsing.
 
-    	I will be giving you a list of such messages, your job is to understand what is written in the message,
-    	parse it and rewrite it in the following form/structure.
+	I will be giving you a list of such messages, your job is to understand what is written in the message, 
+	parse it and rewrite it in a python json format with the code being stored in the "code" key 
+	and location stored in the "location" key and value stored in the "value" key.
+	Just return the parsed message and nothing else. Put all the parsed messages in the same json object,
+	so in essense you just output a single json object (a list of dicts) with each dict in the list containing 
+	details about one message. The next messages will be the messages you should parse and 
+	return according to the instructions I gave you. \n"""
 
-    	[|#code#, #location#, #value#|, |#code#, #location#, #value#|]
-
-    	Here, the pipe sign | should encapsulate the details of one message and each detail should be encapsulated
-    	within a pound/hashtag sign #. The overall set of messages should be encapsulated within the square brackets
-    	[]. 
-
-    	Here are a few examples on how you should format it from the messages. 
-    	1. LETSGOGCU Phoenix $20 off
-    	2. Code: NYEPUBCRAWL
-
-Las Vegas Only!
-
-$20 Off!
-        3. $15 off $20 Postmates code!
-
-LA Only!
-
-Code: 2025GIFT
-        4. Letsgo49ers
-
-$20 off. Charlotte only. Don't add it if you don't live in that area. It will apply to your account but the promo won't apply when you try to check out.
-        
-        [|#LETSGOGCU#, #Phoenix#, #20#|, |#NYEPUBCRAWL#, #Las Vegas#, #20#|, |#2025GIFT#, #LA#, #15#|, |#Letsgo49ers#, #Charlotte#, #20#|]
-
-        You can add more pipe symbols and increase the size of the final set of list based on the messages I give you.
-        The next messages will be the messages you should parse and return according to the above given format.
-        Just return the parsed message list and nothing else.\n	"""
 	messages_txt = ""
 	for i, j in enumerate(chat):
 		messages_txt += f"{i+1}. {j['body']}\n"
@@ -69,7 +42,7 @@ $20 off. Charlotte only. Don't add it if you don't live in that area. It will ap
     	model=model,
     	contents=final_prompt,
 	)
-	print(messages_txt)
+	# print(final_prompt)
 	print(response.text)
 	return response.text
 
@@ -82,10 +55,16 @@ def get_comments():
 	return comment_list
 
 def parse_output(out:str):
-	pass
+	match = re.search(r"```json\s*(.*?)\s*```", out, re.DOTALL | re.IGNORECASE)
+	result = match.group(1).strip()
+	# print(result)
+	json_out = json.loads(result)
+	return json_out
 
 read = Reader("postmates")
 comment_list = get_comments()
 response_text = query(comment_list)
+output = parse_output(response_text)
 
-
+print(output)
+print(type(output))
