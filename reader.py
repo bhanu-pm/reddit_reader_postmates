@@ -46,6 +46,7 @@ class Reader:
 
 		return unseen_comments_list
 
+
 	def add_comment_to_dict(self, comment, location: str, code: str):
 		self.latest_comment_dict = {}
 		self.latest_comment_dict["id"] = comment.id
@@ -53,6 +54,7 @@ class Reader:
 		self.latest_comment_dict["location"] = location
 		self.latest_comment_dict["code"] = code
 		self.all_comments_list_json.insert(0, self.latest_comment_dict)
+		
 
 	def dump_to_json(self, file_name:str = "all_comments.json"):
 		with open(file_name, "w") as file:

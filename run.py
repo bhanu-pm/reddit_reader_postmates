@@ -1,4 +1,3 @@
-# import google.generativeai as genai
 from google import genai
 from dotenv import load_dotenv
 import os
@@ -61,10 +60,17 @@ def parse_output(out:str):
 	json_out = json.loads(result)
 	return json_out
 
+def check_relevance(json_obj:list):
+	for i in json_obj:
+		if (i["location"] is None) or ("boston" in i["location"].lower()):
+			pass
+
+
 read = Reader("postmates")
 comment_list = get_comments()
-response_text = query(comment_list)
-output = parse_output(response_text)
+if len(comment_list) > 0:
+	response_text = query(comment_list)
+	output = parse_output(response_text)
 
-print(output)
-print(type(output))
+	print(output)
+	print(type(output))
