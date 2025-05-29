@@ -30,31 +30,31 @@ class Reader:
 		# Stickied submission (Pinned post) obj
 		subreddit_obj = self.reddit.subreddit(self.subreddit_name)
 		submission_obj = subreddit_obj.sticky()
-		print(submission_obj)
+		# print(submission_obj)
 
 		submission_obj.comment_sort = "new"
 		submission_obj.comments.replace_more(limit=None)
 
 		unseen_comments_list = []
-		for comment in submission_obj.comments:
+		for i, comment in enumerate(submission_obj.comments):
+			print(comment.body)
 			unseen_comments_dict = {}
 			if self.all_comments_list_json and comment.id == self.all_comments_list_json[0]["id"]:
 				break
 			unseen_comments_dict["id"] = comment.id
 			unseen_comments_dict["body"] = comment.body
 			unseen_comments_list.append(unseen_comments_dict)
+			self.add_comment_to_dict(comment, i)
 
 		return unseen_comments_list
 
 
-	def add_comment_to_dict(self, comment, location: str, code: str):
+	def add_comment_to_dict(self, comment, pos:int = 0):
 		self.latest_comment_dict = {}
 		self.latest_comment_dict["id"] = comment.id
 		self.latest_comment_dict["body"] = comment.body
-		self.latest_comment_dict["location"] = location
-		self.latest_comment_dict["code"] = code
-		self.all_comments_list_json.insert(0, self.latest_comment_dict)
-		
+		self.all_comments_list_json.insert(pos, self.latest_comment_dict)
+
 
 	def dump_to_json(self, file_name:str = "all_comments.json"):
 		with open(file_name, "w") as file:
@@ -62,9 +62,10 @@ class Reader:
 
 
 if __name__ == "__main__":
-	read_subreddit = Reader("postmates")
-	unseen = read_subreddit.fetch_unseen_comments()
+	pass
+	# read_subreddit = Reader("postmates")
+	# unseen = read_subreddit.fetch_unseen_comments()
 
-	for i in unseen:
-		print(i['body'])
+	# for i in unseen:
+		# print(i)
 	# print(unseen)

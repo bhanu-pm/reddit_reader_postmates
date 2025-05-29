@@ -69,6 +69,7 @@ def check_relevance(json_obj:list):
 read = Reader("postmates")
 comment_list = get_comments()
 if len(comment_list) > 0:
+	read.dump_to_json()
 	response_text = query(comment_list)
 	output = parse_output(response_text)
 
