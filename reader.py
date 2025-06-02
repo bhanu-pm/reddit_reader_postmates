@@ -29,15 +29,17 @@ class Reader:
 	def fetch_unseen_comments(self):
 		# Stickied submission (Pinned post) obj
 		subreddit_obj = self.reddit.subreddit(self.subreddit_name)
-		submission_obj = subreddit_obj.sticky()
-		# print(submission_obj)
+		# submission_obj = subreddit_obj.sticky() ##########################
+		submission_obj = self.reddit.submission("1hqyk7y")
+		print(submission_obj)
+		print(type(submission_obj))
 
 		submission_obj.comment_sort = "new"
 		submission_obj.comments.replace_more(limit=None)
 
 		unseen_comments_list = []
 		for i, comment in enumerate(submission_obj.comments):
-			print(comment.body)
+			# print(comment.body)
 			unseen_comments_dict = {}
 			if self.all_comments_list_json and comment.id == self.all_comments_list_json[0]["id"]:
 				break
@@ -62,10 +64,10 @@ class Reader:
 
 
 if __name__ == "__main__":
-	pass
-	# read_subreddit = Reader("postmates")
-	# unseen = read_subreddit.fetch_unseen_comments()
+	# pass
+	read_subreddit = Reader("postmates")
+	unseen = read_subreddit.fetch_unseen_comments()
 
-	# for i in unseen:
-		# print(i)
+	for i in unseen:
+		print(i)
 	# print(unseen)

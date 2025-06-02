@@ -13,6 +13,7 @@ if GEMINI_KEY is None:
 	raise EnvironmentError("GEMINI_API_KEY not found")
 
 client = genai.Client(api_key=GEMINI_KEY)
+read = Reader("postmates")
 
 def query(chat: list, model: str = "gemini-2.0-flash"):
 	prompt = """I will give you a list of chat messages that were written by people. 
@@ -20,16 +21,34 @@ def query(chat: list, model: str = "gemini-2.0-flash"):
 	and in what locations it would work.
 
 	There might also be some cases where people only post the codes and no other details about it. 
-	Sometimes there might be messages like this [deleted], it just means that the message 
+	Sometimes there might be messages like this [deleted] or [removed], it just means that the message 
 	has been deleted, you can ignore them while parsing.
 
 	I will be giving you a list of such messages, your job is to understand what is written in the message, 
 	parse it and rewrite it in a python json format with the code being stored in the "code" key 
-	and location stored in the "location" key and value stored in the "value" key.
-	Just return the parsed message and nothing else. Put all the parsed messages in the same json object,
+	and location stored in the "location" key and price stored in the "price" key.
+
+	If no location is provided or if the location provided is in the state of Massachusetts of USA or if the
+	location provided works in all of USA, put "MA" in the "location" key. For all other locations put their 
+	respective locations in the "location" key.
+
+	Here is an example: message= BOBA25 $15 Phoenix.
+	Here, the code is BOBA25, and $15 is the price, and Phoenix is the location (since in this case it doesn't make much sense to be talking about the phoenix bird lol).
+
+	Maintain the order of the messages in the json object. Put all the parsed messages in the same json object,
 	so in essense you just output a single json object (a list of dicts) with each dict in the list containing 
 	details about one message. The next messages will be the messages you should parse and 
-	return according to the instructions I gave you. \n"""
+	return according to the instructions I gave you. It is of the utmost importance that you give the final json
+	object at the end of all of your thinking and the json object should be enclosed in between $* and *$. 
+	Here is an example of how to enclose the json object. 
+	$*[{code: "BOBA25",
+	    location: "Phoenix",
+	    price: "15"}]*$
+	Immediately after the $* you have to start the json object, that is the left square bracket '[' and at the end,
+	immediately after the right square bracket ']' you have to end with the *$. Don't put anything else after the $*
+	except the json object and don't put anything immediately after the json object except *$. 
+	This is because I will use the $* and *$ in regex to catch and store the json object.
+	Think step by step, but don't output too much jargon.\n"""
 
 	messages_txt = ""
 	for i, j in enumerate(chat):
@@ -54,26 +73,42 @@ def get_comments():
 	return comment_list
 
 def parse_output(out:str):
-	match = re.search(r"```json\s*(.*?)\s*```", out, re.DOTALL | re.IGNORECASE)
+	match = re.search(r"\$\*(.*?)\*\$", out, re.DOTALL)
 	result = match.group(1).strip()
-	# print(result)
+	print(f"Parsed result is :\n{result}")
 	json_out = json.loads(result)
 	return json_out
 
 def check_relevance(json_obj:list):
-	for i in json_obj:
-		if (i["location"] is None) or ("boston" in i["location"].lower()):
+	for i, j in enumerate(json_obj):
+		if j["location"].strip() == "MA":
 			pass
+		else:
+			json_obj.pop(i)
+	return json_obj
 
 
-read = Reader("postmates")
-comment_list = get_comments()
-if len(comment_list) > 0:
-	read.dump_to_json()
-	response_text = query(comment_list)
-	output = parse_output(response_text)
+def lambda_handler(event, context):
+	# TODO implement
+	comment_list = get_comments()
+	if len(comment_list) > 0:
+		read.dump_to_json()
+		response_text = query(comment_list)
+		output = parse_output(response_text)
+		final_output = check_relevance(output)
+		print("Here are the codes")
 
-	print(output)
-	print(type(output))
-else:
-	print("Nothing new")
+		return {
+        		'statusCode': 200,
+        		'body': final_output
+    		}
+	else:
+		print("No new comments")
+		return {
+        		'statusCode': 200,
+        		'body': json.dumps('No new comments!')
+    		}
+
+
+out = lambda_handler("hi", "hi")
+print(out)
