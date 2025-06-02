@@ -75,3 +75,5 @@ if len(comment_list) > 0:
 
 	print(output)
 	print(type(output))
+else:
+	print("Nothing new")
