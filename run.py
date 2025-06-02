@@ -30,7 +30,7 @@ def query(chat: list, model: str = "gemini-2.0-flash"):
 
 	If no location is provided or if the location provided is in the state of Massachusetts of USA or if the
 	location provided works in all of USA, put "MA" in the "location" key. For all other locations put their 
-	respective locations in the "location" key.
+	respective locations in the "location" key. If there is no price just put "0" in the "price" key.
 
 	Here is an example: message= BOBA25 $15 Phoenix.
 	Here, the code is BOBA25, and $15 is the price, and Phoenix is the location (since in this case it doesn't make much sense to be talking about the phoenix bird lol).
@@ -39,15 +39,17 @@ def query(chat: list, model: str = "gemini-2.0-flash"):
 	so in essense you just output a single json object (a list of dicts) with each dict in the list containing 
 	details about one message. The next messages will be the messages you should parse and 
 	return according to the instructions I gave you. It is of the utmost importance that you give the final json
-	object at the end of all of your thinking and the json object should be enclosed in between $* and *$. 
-	Here is an example of how to enclose the json object. 
-	$*[{code: "BOBA25",
-	    location: "Phoenix",
-	    price: "15"}]*$
-	Immediately after the $* you have to start the json object, that is the left square bracket '[' and at the end,
-	immediately after the right square bracket ']' you have to end with the *$. Don't put anything else after the $*
-	except the json object and don't put anything immediately after the json object except *$. 
-	This is because I will use the $* and *$ in regex to catch and store the json object.
+	object at the end of all of your thinking and the json object should be enclosed by ```json and ```.
+	Here is an example:
+	```json
+	[
+	{
+	code: "BOBA25",
+	location: "Phoenix",
+	price: "15"
+	}
+	]
+	```
 	Think step by step, but don't output too much jargon.\n"""
 
 	messages_txt = ""
@@ -61,7 +63,7 @@ def query(chat: list, model: str = "gemini-2.0-flash"):
     	contents=final_prompt,
 	)
 	# print(final_prompt)
-	print(response.text)
+	# print(response.text)
 	return response.text
 
 def get_comments():
@@ -73,19 +75,19 @@ def get_comments():
 	return comment_list
 
 def parse_output(out:str):
-	match = re.search(r"\$\*(.*?)\*\$", out, re.DOTALL)
+	match = re.search(r"```json(.*?)```", out, re.DOTALL)
 	result = match.group(1).strip()
-	print(f"Parsed result is :\n{result}")
+	# print(f"Parsed result is :\n{result}")
 	json_out = json.loads(result)
 	return json_out
 
 def check_relevance(json_obj:list):
+	temp = []
 	for i, j in enumerate(json_obj):
-		if j["location"].strip() == "MA":
-			pass
-		else:
-			json_obj.pop(i)
-	return json_obj
+		if "MA" in j['location']:
+			# print(j)
+			temp.append(j)
+	return temp
 
 
 def lambda_handler(event, context):
@@ -95,15 +97,16 @@ def lambda_handler(event, context):
 		read.dump_to_json()
 		response_text = query(comment_list)
 		output = parse_output(response_text)
+		# print(f"Output: {output}")
 		final_output = check_relevance(output)
-		print("Here are the codes")
+		# print("Here are the codes")
 
 		return {
         		'statusCode': 200,
         		'body': final_output
     		}
 	else:
-		print("No new comments")
+		# print("No new comments")
 		return {
         		'statusCode': 200,
         		'body': json.dumps('No new comments!')

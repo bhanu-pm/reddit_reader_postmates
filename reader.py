@@ -29,10 +29,10 @@ class Reader:
 	def fetch_unseen_comments(self):
 		# Stickied submission (Pinned post) obj
 		subreddit_obj = self.reddit.subreddit(self.subreddit_name)
-		# submission_obj = subreddit_obj.sticky() ##########################
-		submission_obj = self.reddit.submission("1hqyk7y")
-		print(submission_obj)
-		print(type(submission_obj))
+		submission_obj = subreddit_obj.sticky() ##########################
+		# submission_obj = self.reddit.submission("1hqyk7y")
+		# print(submission_obj)
+		# print(type(submission_obj))
 
 		submission_obj.comment_sort = "new"
 		submission_obj.comments.replace_more(limit=None)
