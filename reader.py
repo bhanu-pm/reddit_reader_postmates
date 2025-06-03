@@ -2,11 +2,12 @@ import os
 from dotenv import load_dotenv
 import json
 from praw import Reddit
+import boto3
 
-# import time
-# from datetime import datetime
-# from praw.models import MoreComments, Submission, Subreddit
 
+s3_client = boto3.client('s3')
+aws_bucket_name = "pcg-comment-storage"
+file_name = "all_comments.json"
 
 class Reader:
 	# Reddit user object
@@ -19,10 +20,10 @@ class Reader:
 		self.reddit = Reddit(client_id=Reader.client_id, client_secret=Reader.client_secret, user_agent=Reader.user_agent)
 		self.subreddit_name = subreddit_name
 		try:
-			with open('all_comments.json', 'r') as file:
-				self.all_comments_list_json = json.load(file)
+			file_content = s3_client.get_object(Bucket=aws_bucket_name, Key=file_name)["Body"].read().decode("utf-8")
+			self.all_comments_list_json = json.loads(file_content)
 
-		except FileNotFoundError:
+		except Exception as e:
 			self.all_comments_list_json = []
 
 
@@ -58,9 +59,8 @@ class Reader:
 		self.all_comments_list_json.insert(pos, self.latest_comment_dict)
 
 
-	def dump_to_json(self, file_name:str = "all_comments.json"):
-		with open(file_name, "w") as file:
-			json.dump(self.all_comments_list_json, file, indent=4)
+	def dump_to_json(self, file_name:str = file_name):
+		s3_client.put_object(Bucket=aws_bucket_name, Key=file_name, Body=json.dumps(self.all_comments_list_json))
 
 
 if __name__ == "__main__":
