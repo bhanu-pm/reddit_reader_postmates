@@ -5,6 +5,7 @@ import time
 from reader import Reader
 import json
 import re
+import boto3
 
 
 load_dotenv()
@@ -14,6 +15,10 @@ if GEMINI_KEY is None:
 
 client = genai.Client(api_key=GEMINI_KEY)
 read = Reader("postmates")
+
+s3_client_same = boto3.client('s3')
+aws_bucket_name_same = "pcg-comment-storage"
+file_name_new = "comment_db.json"
 
 def query(chat: list, model: str = "gemini-2.0-flash"):
 	prompt = """I will give you a list of chat messages that were written by people. 
@@ -89,17 +94,22 @@ def check_relevance(json_obj:list):
 			temp.append(j)
 	return temp
 
-
 def lambda_handler(event, context):
-	# TODO implement
 	comment_list = get_comments()
 	if len(comment_list) > 0:
 		read.dump_to_json()
 		response_text = query(comment_list)
 		output = parse_output(response_text)
-		# print(f"Output: {output}")
 		final_output = check_relevance(output)
-		# print("Here are the codes")
+
+		try:
+			file_content = s3_client_same.get_object(Bucket=aws_bucket_name_same, Key=file_name_new)
+			previous_db_elements = json.loads(file_content['Body'].read())
+		except Exception as e:
+			previous_db_elements = []
+
+		# Appending the final json to db json file
+		s3_client_same.put_object(Bucket=aws_bucket_name_same, Key=file_name_new, Body=json.dumps(previous_db_elements + final_output))
 
 		return {
         		'statusCode': 200,
@@ -111,7 +121,4 @@ def lambda_handler(event, context):
         		'statusCode': 200,
         		'body': json.dumps('No new comments!')
     		}
-
-
-out = lambda_handler("hi", "hi")
-print(out)
+	
